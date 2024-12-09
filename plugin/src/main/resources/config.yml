@@ -32,4 +32,5 @@ events:
   FFA:
     - type: scheduled # Type of event
       interval: 30m # Interval until start
+      delay: 5m # Delay until start
       message: "<gold>[</gold><yellow>BattleArena</yellow><gold>]</gold> <yellow>A Free for All event is starting! Run <gold>/ffa join</gold> to join!</yellow>"

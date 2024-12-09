@@ -13,13 +13,15 @@ public class EventOptions {
     private EventType type;
     @ArenaOption(name = "interval", required = true, description = "The interval of the event.")
     private Duration interval;
+    @ArenaOption(name = "delay", description = "The delay until the event starts.")
+    private Duration delay = Duration.ZERO;
     @ArenaOption(name = "message", required = true, description = "The message of the event.")
     private Component message;
 
     public EventOptions() {
     }
 
-    public EventOptions(EventType type, Duration interval, Component message) {
+    public EventOptions(EventType type, Duration interval, Duration delay, Component message) {
         this.type = type;
         this.interval = interval;
         this.message = message;
@@ -31,6 +33,10 @@ public class EventOptions {
 
     public Duration getInterval() {
         return this.interval;
+    }
+
+    public Duration getDelay() {
+        return this.delay;
     }
 
     public Component getMessage() {

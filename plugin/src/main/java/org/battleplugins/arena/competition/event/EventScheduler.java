@@ -30,7 +30,7 @@ public class EventScheduler {
      * @param arena the arena to schedule the event in
      * @param options the options for the event
      */
-    public void scheduleEvent(Arena arena, EventOptions options) {
+    public void scheduleEvent(Arena arena, EventOptions options, boolean initial) {
         ScheduledEvent scheduledEvent = this.scheduledEvents.get(arena);
         if (scheduledEvent != null) {
             scheduledEvent.task().cancel();
@@ -38,9 +38,14 @@ public class EventScheduler {
             arena.getPlugin().info("An event is already scheduled in arena {}, cancelling the previous event.", arena.getName());
         }
 
+        long timeTilStart = options.getInterval().toMillis() / 50;
+        if (initial) {
+            timeTilStart = options.getDelay().toMillis() / 50;
+        }
+
         BukkitTask bukkitTask = Bukkit.getScheduler().runTaskLater(arena.getPlugin(), () -> {
             this.startEvent(arena, options);
-        }, options.getInterval().toMillis() / 50);
+        }, timeTilStart);
 
         this.scheduledEvents.put(arena, new ScheduledEvent(options, bukkitTask));
     }
@@ -126,7 +131,7 @@ public class EventScheduler {
             return;
         }
 
-        this.scheduleEvent(arena, scheduledEvent.options());
+        this.scheduleEvent(arena, scheduledEvent.options(), false);
         arena.getPlugin().info("Event in arena {} has ended. Rescheduling event at interval.", arena.getName());
     }
 

@@ -123,7 +123,10 @@ public class BattleArena extends JavaPlugin implements LoggerHolder {
 
         // Cheeky little message about BattleTracker <3
         if (Bukkit.getPluginManager().getPlugin("BattleTracker") == null) {
-            this.warn("BattleTracker not found! Arena statistics will not be tracked. You can download BattleTracker at: https://modrinth.com/project/battletracker.");
+            this.warn("----------------------------------------");
+            this.warn("BattleTracker not found! Arena statistics will not be saved.");
+            this.warn("You can download BattleTracker at: https://modrinth.com/project/battletracker.");
+            this.warn("----------------------------------------");
         }
     }
 
@@ -237,8 +240,8 @@ public class BattleArena extends JavaPlugin implements LoggerHolder {
                     continue; // We are not interested in starting manual events
                 }
 
-                this.eventScheduler.scheduleEvent(arena, options);
-                this.info("Scheduled event for arena {} in {}m.", arena.getName(), options.getInterval());
+                this.eventScheduler.scheduleEvent(arena, options, true);
+                this.info("Scheduled event for arena {} in {}m.", arena.getName(), options.getInterval().plus(options.getDelay()));
             }
         }
     }
