@@ -51,7 +51,7 @@ public final class Messages {
 
     // Arena messages
     public static final Message NO_OPEN_ARENAS = error("arena-no-open-arenas", "There are no open arenas!");
-    public static final Message NO_MAPS_FOR_ARENA = error("arena-no-open-maps-for-arena", "There arena has no open maps!");
+    public static final Message NO_MAPS_FOR_ARENA = error("arena-no-open-maps-for-arena", "This arena has no open maps!");
     public static final Message NO_RUNNING_COMPETITIONS = error("arena-no-running competitions", "No running competitions.");
     public static final Message NO_ARENA_WITH_NAME = error("arena-arena-with-name", "There is no arena with that name!");
     public static final Message ARENA_FULL = error("arena-full", "This arena is full!");

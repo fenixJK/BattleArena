@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ArenaCommandExecutor extends BaseCommandExecutor {
     private static final CompetitionMap RANDOM_MAP_MARKER = new CompetitionMap() {
@@ -92,14 +93,21 @@ public class ArenaCommandExecutor extends BaseCommandExecutor {
 
                 Messages.ARENA_JOINED.send(player, competition.getMap().getName());
             } else {
-                if (map == RANDOM_MAP_MARKER) {
-                    Messages.NO_OPEN_ARENAS.send(player);
+                List<LiveCompetitionMap> maps = this.arena.getPlugin().getMaps(this.arena);
+                if (maps.isEmpty()) {
+                    Messages.NO_MAPS_FOR_ARENA.send(player);
                     return;
+                }
+
+                String mapName = map.getName();
+                if (map == RANDOM_MAP_MARKER) {
+                    // Select a random map
+                    mapName = maps.get(ThreadLocalRandom.current().nextInt(maps.size())).getName();
                 }
 
                 // Try and create a dynamic competition if possible
                 this.arena.getPlugin()
-                        .getOrCreateCompetition(this.arena, player, PlayerRole.PLAYING, map.getName())
+                        .getOrCreateCompetition(this.arena, player, PlayerRole.PLAYING, mapName)
                         .whenComplete((newResult, ex) -> {
                             if (ex != null) {
                                 Messages.ARENA_ERROR.send(player, ex.getMessage());
