@@ -414,7 +414,14 @@ public final class ArenaConfigParser {
             List<Object> objectList = new ArrayList<>(list.size());
 
             // Get the primitive type of the list
-            Class<?> listType = (Class<?>) ((ParameterizedType) genericType).getActualTypeArguments()[0];
+            Class<?> listType;
+            Type[] types = ((ParameterizedType) genericType).getActualTypeArguments();
+            if (types[0] instanceof ParameterizedType) {
+                listType = (Class<?>) ((ParameterizedType) types[0]).getRawType();
+            } else {
+                listType = (Class<?>) types[0];
+            }
+
             if (OBJECT_PROVIDERS.containsKey(listType)) {
                 Parser<Object> objectProvider = OBJECT_PROVIDERS.get(listType);
                 for (Object object : list) {

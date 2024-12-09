@@ -10,6 +10,7 @@ import org.battleplugins.arena.config.context.EventContextProvider;
 import org.battleplugins.arena.config.context.OptionContextProvider;
 import org.battleplugins.arena.config.context.PhaseContextProvider;
 import org.battleplugins.arena.config.context.VictoryConditionContextProvider;
+import org.battleplugins.arena.util.CustomEffect;
 import org.battleplugins.arena.util.IntRange;
 import org.battleplugins.arena.util.PositionWithRotation;
 import org.bukkit.Bukkit;
@@ -70,29 +71,7 @@ final class DefaultParsers {
             }
         });
 
-        ArenaConfigParser.registerProvider(Color.class, configValue -> {
-            if (!(configValue instanceof String value)) {
-                return null;
-            }
-
-            if (value.startsWith("#")) {
-                return Color.decode(value);
-            } else if (value.contains(",")) {
-                String[] split = value.split(",");
-                if (split.length != 3) {
-                    throw new ParseException("Color must have 3 values!")
-                            .context("Provided color", value)
-                            .context("Expected format", "r,g,b")
-                            .cause(ParseException.Cause.INVALID_VALUE)
-                            .userError();
-                }
-
-                return new Color(Integer.parseInt(split[0]), Integer.parseInt(split[1]), Integer.parseInt(split[2]));
-            } else {
-                return Color.getColor(value);
-            }
-        });
-
+        ArenaConfigParser.registerProvider(Color.class, new ColorParser());
         ArenaConfigParser.registerProvider(Component.class, configValue -> {
             if (!(configValue instanceof String value)) {
                 return null;
@@ -102,6 +81,7 @@ final class DefaultParsers {
         });
 
         ArenaConfigParser.registerProvider(BlockData.class, parseString(Bukkit::createBlockData));
+        ArenaConfigParser.registerProvider(CustomEffect.class, new CustomEffectParser<>());
     }
 
     private static <T> ArenaConfigParser.Parser<T> parseString(Function<String, T> parser) {

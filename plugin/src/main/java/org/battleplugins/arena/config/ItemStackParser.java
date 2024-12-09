@@ -15,7 +15,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionEffect;
 
-import java.awt.Color;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -78,9 +77,9 @@ public final class ItemStackParser implements ArenaConfigParser.Parser<ItemStack
             switch (key) {
                 case "color" -> {
                     if (itemMeta instanceof ColorableArmorMeta colorMeta) {
-                        colorMeta.setColor(org.bukkit.Color.fromRGB(Color.getColor(value).getRGB()));
+                        colorMeta.setColor(ColorParser.deserializeSingularBukkit(value));
                     } else if (itemMeta instanceof PotionMeta potionMeta) {
-                        potionMeta.setColor(org.bukkit.Color.fromRGB(Color.getColor(value).getRGB()));
+                        potionMeta.setColor(ColorParser.deserializeSingularBukkit(value));
                     }
                 }
                 case "custom-model-data" -> {
@@ -169,9 +168,9 @@ public final class ItemStackParser implements ArenaConfigParser.Parser<ItemStack
             switch (meta) {
                 case "color": {
                     if (itemMeta instanceof ColorableArmorMeta colorMeta) {
-                        colorMeta.setColor(org.bukkit.Color.fromRGB(Color.getColor(section.getString(meta)).getRGB()));
+                        colorMeta.setColor(ColorParser.deserializeSingularBukkit(section.getString(meta)));
                     } else if (itemMeta instanceof PotionMeta potionMeta) {
-                        potionMeta.setColor(org.bukkit.Color.fromRGB(Color.getColor(section.getString(meta)).getRGB()));
+                        potionMeta.setColor(ColorParser.deserializeSingularBukkit(section.getString(meta)));
                     }
                 }
                 case "custom-model-data": {
