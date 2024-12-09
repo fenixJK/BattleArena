@@ -8,6 +8,7 @@ import org.battleplugins.arena.competition.map.MapType;
 import org.battleplugins.arena.competition.phase.CompetitionPhaseType;
 import org.battleplugins.arena.competition.phase.phases.VictoryPhase;
 import org.battleplugins.arena.event.arena.ArenaCreateCompetitionEvent;
+import org.battleplugins.arena.event.arena.ArenaRemoveCompetitionEvent;
 import org.battleplugins.arena.event.player.ArenaLeaveEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -199,6 +200,10 @@ public class CompetitionManager {
         }
 
         competitions.remove(competition);
+
+        ArenaRemoveCompetitionEvent event = new ArenaRemoveCompetitionEvent(arena, competition);
+        this.plugin.getServer().getPluginManager().callEvent(event);
+
         if (competition.getMap().getType() == MapType.DYNAMIC && competition.getMap() instanceof LiveCompetitionMap map) {
             this.clearDynamicMap(map);
         }
