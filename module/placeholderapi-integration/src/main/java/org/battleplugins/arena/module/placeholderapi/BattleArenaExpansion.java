@@ -5,6 +5,9 @@ import org.battleplugins.arena.Arena;
 import org.battleplugins.arena.ArenaPlayer;
 import org.battleplugins.arena.BattleArena;
 import org.battleplugins.arena.competition.Competition;
+import org.battleplugins.arena.competition.LiveCompetition;
+import org.battleplugins.arena.competition.map.CompetitionMap;
+import org.battleplugins.arena.competition.map.LiveCompetitionMap;
 import org.battleplugins.arena.competition.phase.CompetitionPhaseType;
 import org.battleplugins.arena.resolver.Resolver;
 import org.battleplugins.arena.resolver.ResolverKey;
@@ -12,6 +15,8 @@ import org.battleplugins.arena.resolver.ResolverKeys;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class BattleArenaExpansion extends PlaceholderExpansion {
     private final BattleArena plugin;
@@ -68,6 +73,31 @@ public class BattleArenaExpansion extends PlaceholderExpansion {
 
         // Remaining text in split array
         String placeholder = String.join("_", split).substring(arenaName.length() + 1);
+        if (placeholder.startsWith("map")) {
+            placeholder = placeholder.substring("map_".length());
+
+            // Next value after map_ is the actual placeholder
+            String mapName = placeholder.split("_")[0];
+            List<Competition<?>> competitions = this.plugin.getCompetitions(arena, mapName);
+            if (competitions.isEmpty()) {
+                return null;
+            }
+
+            placeholder = placeholder.substring(mapName.length() + 1);
+
+            // Just get the first competition for now
+            Competition<?> competition = competitions.get(0);
+            if (!(competition instanceof LiveCompetition<?> liveCompetition)) {
+                return null;
+            }
+
+            Resolver resolver = liveCompetition.resolve();
+            ResolverKey<?> resolverKey = ResolverKeys.get(placeholder.replace("_", "-"));
+            if (resolverKey != null && resolver.has(resolverKey)) {
+                return resolver.resolveToString(resolverKey);
+            }
+        }
+
         switch (placeholder) {
             case "active_competitions": {
                 return String.valueOf(this.plugin.getCompetitions(arena).size());

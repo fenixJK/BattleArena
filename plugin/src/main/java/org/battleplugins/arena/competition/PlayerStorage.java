@@ -12,6 +12,7 @@ import org.bukkit.potion.PotionEffect;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,8 +46,8 @@ public class PlayerStorage {
     private final Collection<PotionEffect> effects = new ArrayList<>();
     
     private Location lastLocation;
-    
-    private boolean stored;
+
+    private final BitSet stored = new BitSet();
     
     public PlayerStorage(ArenaPlayer player) {
         this.player = player;
@@ -58,15 +59,16 @@ public class PlayerStorage {
      * @param toStore the types to store
      */
     public void store(Set<Type> toStore, boolean clearState) {
-        if (this.stored) {
-            return;
-        }
-
         for (Type type : toStore) {
+            if (this.stored.get(type.ordinal())) {
+                BattleArena.getInstance().warn("Type {} is already stored for player {}.", type, this.player.getPlayer().getName());
+                continue;
+            }
+
             type.store(this);
+            this.stored.set(type.ordinal());
         }
 
-        this.stored = true;
         if (clearState) {
             this.clearState(toStore);
         }
@@ -147,26 +149,26 @@ public class PlayerStorage {
      * @param toRestore the types to restore
      */
     public void restore(Set<Type> toRestore) {
-        if (!this.stored) {
-            return;
-        }
-        
         for (Type type : toRestore) {
+            if (!this.stored.get(type.ordinal())) {
+                BattleArena.getInstance().warn("Type {} is not stored for player {}.", type, this.player.getPlayer().getName());
+                continue;
+            }
+
             type.restore(this);
+            this.stored.clear(type.ordinal());
         }
         
         // Reset everything we have in this class
-        this.inventory = null;
-        this.attributes.clear();
-        this.health = 0;
-        this.hunger = 0;
-        this.totalExp = 0;
-        this.exp = 0;
-        this.expLevels = 0;
-        this.effects.clear();
-        this.lastLocation = null;
-        
-        this.stored = false;
+        if (toRestore.contains(Type.INVENTORY)) this.inventory = null;
+        if (toRestore.contains(Type.ATTRIBUTES)) this.attributes.clear();
+        if (toRestore.contains(Type.HEALTH)) this.health = 0;
+        if (toRestore.contains(Type.HEALTH)) this.hunger = 0;
+        if (toRestore.contains(Type.EXPERIENCE)) this.totalExp = 0;
+        if (toRestore.contains(Type.EXPERIENCE)) this.exp = 0;
+        if (toRestore.contains(Type.EXPERIENCE)) this.expLevels = 0;
+        if (toRestore.contains(Type.EFFECTS)) this.effects.clear();
+        if (toRestore.contains(Type.LOCATION)) this.lastLocation = null;
     }
 
     private void restoreAll() {

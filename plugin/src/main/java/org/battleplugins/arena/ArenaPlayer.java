@@ -335,7 +335,7 @@ public class ArenaPlayer implements StatHolder, Resolvable {
      */
     @Nullable
     public static ArenaPlayer getArenaPlayer(Player player) {
-        if (!player.hasMetadata(ARENA_PLAYER_META_KEY)) {
+        if (player == null || !player.hasMetadata(ARENA_PLAYER_META_KEY)) {
             return null;
         }
 

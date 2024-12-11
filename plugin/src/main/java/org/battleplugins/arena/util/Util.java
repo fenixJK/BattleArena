@@ -3,7 +3,6 @@ package org.battleplugins.arena.util;
 import org.battleplugins.arena.BattleArena;
 import org.battleplugins.arena.config.ArenaOption;
 import org.battleplugins.arena.messages.Messages;
-import org.bukkit.Bukkit;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +11,10 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -174,7 +176,10 @@ public class Util {
                         Path relativePath = directoryPath.relativize(path);
                         Path targetPath = outputPath.resolve(relativePath.toString());
                         if (Files.exists(targetPath)) {
-                            return;
+                            // Check hashes - if different, copy from jar
+                            if (Arrays.equals(getHash(path), getHash(targetPath))) {
+                                return;
+                            }
                         }
 
                         for (String ignoredFile : ignoredFiles) {
@@ -185,7 +190,7 @@ public class Util {
 
                         try {
                             Files.createDirectories(targetPath.getParent());
-                            Files.copy(path, targetPath);
+                            Files.copy(path, targetPath, StandardCopyOption.REPLACE_EXISTING);
                         } catch (IOException e) {
                             BattleArena.getInstance().error("Failed to copy module {}!", path.getFileName(), e);
                         }
@@ -197,23 +202,15 @@ public class Util {
         }
     }
 
-    public static String getNmsPackage() {
-        String NMS;
-        try {
-            // This fails for versions without an NMS package
-            NMS = Bukkit.getServer().getClass().getPackage().getName().replace(".", ",").split(",")[3];
-        } catch (ArrayIndexOutOfBoundsException ex) {
-            NMS = createCompatPackage();
-        }
-        return NMS;
-    }
+    private static byte[] getHash(Path path) {
+        byte[] sha256;
 
-    private static String createCompatPackage() {
-        String fullVersion = Bukkit.getBukkitVersion();
-        String[] parts = fullVersion.split("-");
-        String version = parts[0];
-        version = version.replace(".", "_");
-        version = "v" + version;
-        return version;
+        try {
+            sha256 = MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(path));
+        } catch (Exception e) {
+            throw new RuntimeException("Could not calculate pack hash", e);
+        }
+
+        return sha256;
     }
 }

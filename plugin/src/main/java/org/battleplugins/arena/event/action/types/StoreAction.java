@@ -5,6 +5,7 @@ import org.battleplugins.arena.event.action.EventAction;
 import org.battleplugins.arena.competition.PlayerStorage;
 import org.battleplugins.arena.resolver.Resolvable;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,7 +22,7 @@ public class StoreAction extends EventAction {
         String[] types = this.get(TYPES_KEY).split(",");
         PlayerStorage.Type[] toStore = new PlayerStorage.Type[types.length];
         for (int i = 0; i < types.length; i++) {
-            toStore[i] = PlayerStorage.Type.valueOf(types[i].toUpperCase());
+            toStore[i] = PlayerStorage.Type.valueOf(types[i].toUpperCase(Locale.ROOT));
         }
 
         boolean clearState = Boolean.parseBoolean(this.getOrDefault(CLEAR_STATE, "true"));

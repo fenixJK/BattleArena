@@ -45,7 +45,7 @@ public class CompetitionManager {
     public List<Competition<?>> getCompetitions(Arena arena, String name) {
         List<Competition<?>> competitions = this.getCompetitions(arena);
         return competitions.stream()
-                .filter(competition -> competition.getMap().getName().equals(name))
+                .filter(competition -> competition.getMap().getName().equalsIgnoreCase(name))
                 .toList();
     }
 
@@ -105,7 +105,7 @@ public class CompetitionManager {
                     continue;
                 }
 
-                if ((name == null || map.getName().equals(name))) {
+                if ((name == null || map.getName().equalsIgnoreCase(name))) {
                     Competition<?> competition = map.createDynamicCompetition(arena);
                     if (competition == null) {
                         this.plugin.warn("Failed to create dynamic competition for map {} in arena {}!", map.getName(), arena.getName());
