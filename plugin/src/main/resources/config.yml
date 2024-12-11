@@ -25,6 +25,8 @@ randomized-arena-join: false
 
 # Modules that are disabled by default. BattleArena comes pre-installed with
 # multiple modules that can be disabled below if their behavior is not desired
+# Example for disabling the parties module:
+# disabled-modules: [parties]
 disabled-modules: []
 
 # Event configurations

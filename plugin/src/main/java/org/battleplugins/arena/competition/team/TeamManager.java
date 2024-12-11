@@ -169,8 +169,29 @@ public class TeamManager {
      * @return whether the player can join the team
      */
     public boolean canJoinTeam(ArenaTeam team) {
+        return this.canJoinTeam(team, 1);
+    }
+
+    /**
+     * Returns whether the player can join the given {@link ArenaTeam}.
+     *
+     * @param team the team to check if the player can join
+     * @param playersToJoin the amount of players to join
+     * @return whether the player can join the team
+     */
+    public boolean canJoinTeam(ArenaTeam team, int playersToJoin) {
         int playersOnTeam = this.getNumberOfPlayersOnTeam(team);
-        return playersOnTeam < this.getMaximumTeamSize(team);
+        return playersOnTeam + playersToJoin <= this.getMaximumTeamSize(team);
+    }
+
+    /**
+     * Returns the remaining space on the given {@link ArenaTeam}.
+     *
+     * @param team the team to get the remaining space for
+     * @return the remaining space on the team
+     */
+    public int getRemainingSpace(ArenaTeam team) {
+        return this.getMaximumTeamSize(team) - this.getNumberOfPlayersOnTeam(team);
     }
 
     /**

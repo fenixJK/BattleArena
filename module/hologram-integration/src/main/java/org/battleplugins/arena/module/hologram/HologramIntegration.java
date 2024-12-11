@@ -10,7 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 
 /**
- * A module that allows for hooking into various hologram plugin.
+ * A module that allows for hooking into various hologram plugins.
  */
 @ArenaModule(id = HologramIntegration.ID, name = "Hologram", description = "Adds support for hooking into various Hologram plugins.", authors = "BattlePlugins")
 public class HologramIntegration implements ArenaModuleInitializer {

@@ -6,6 +6,7 @@ import org.bukkit.configuration.ConfigurationSection;
 import java.util.HashMap;
 import java.util.Map;
 
+@DocumentationSource("https://docs.battleplugins.org/books/user-guide/page/custom-effect-format")
 public class CustomEffectParser<T extends CustomEffect<?>> implements ArenaConfigParser.Parser<T> {
 
     @SuppressWarnings("unchecked")

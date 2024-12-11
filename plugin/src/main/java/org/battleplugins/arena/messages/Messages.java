@@ -82,6 +82,8 @@ public final class Messages {
     public static final Message NO_TEAMS = error("arena-no-teams", "There are no teams in this arena!");
     public static final Message CANNOT_JOIN_TEAM_SOLO = error("arena-cannot-join-team-solo", "You cannot join a team in a solo arena!");
     public static final Message TEAM_SELECTION_NOT_AVAILABLE = error("arena-team-selection-not-available", "Team selection is not available at this time!");
+    public static final Message CANNOT_JOIN_ARENA_NOT_PARTY_LEADER = error("arena-cannot-join-arena-not-party-leader", "You must be the party leader to join an arena!");
+    public static final Message CANNOT_JOIN_ARENA_MEMBER_IN_ARENA = error("arena-cannot-join-arena-member-in-arena", "You cannot join an arena while a party member is in an arena!");
 
     public static final Message ARENA_STARTS_IN = info("arena-starts-in", "{} will start in <secondary>{}</secondary>!");
     public static final Message ARENA_START_CANCELLED = error("arena-starts-cancelled", "Countdown cancelled as there is not enough players to start!");

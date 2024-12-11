@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -49,9 +50,13 @@ public class CompetitionManager {
     }
 
     public CompletableFuture<CompetitionResult> getOrCreateCompetition(Arena arena, Player player, PlayerRole role, @Nullable String name) {
+        return this.getOrCreateCompetition(arena, List.of(player), role, name);
+    }
+
+    public CompletableFuture<CompetitionResult> getOrCreateCompetition(Arena arena, Collection<Player> players, PlayerRole role, @Nullable String name) {
         // See if we can join any already open competitions
         List<Competition<?>> openCompetitions = this.getCompetitions(arena, name);
-        CompletableFuture<CompetitionResult> joinableCompetition = this.findJoinableCompetition(openCompetitions, player, role);
+        CompletableFuture<CompetitionResult> joinableCompetition = this.findJoinableCompetition(openCompetitions, players, role);
         return joinableCompetition.thenApplyAsync(result -> {
             if (result.competition() != null) {
                 return result;
@@ -118,10 +123,18 @@ public class CompetitionManager {
     }
 
     public CompletableFuture<CompetitionResult> findJoinableCompetition(List<Competition<?>> competitions, Player player, PlayerRole role) {
-        return this.findJoinableCompetition(competitions, player, role, null);
+        return this.findJoinableCompetition(competitions, List.of(player), role);
+    }
+
+    public CompletableFuture<CompetitionResult> findJoinableCompetition(List<Competition<?>> competitions, Collection<Player> players, PlayerRole role) {
+        return this.findJoinableCompetition(competitions, players, role, null);
     }
 
     private CompletableFuture<CompetitionResult> findJoinableCompetition(List<Competition<?>> competitions, Player player, PlayerRole role, @Nullable JoinResult lastResult) {
+        return this.findJoinableCompetition(competitions, List.of(player), role, lastResult);
+    }
+
+    private CompletableFuture<CompetitionResult> findJoinableCompetition(List<Competition<?>> competitions, Collection<Player> players, PlayerRole role, @Nullable JoinResult lastResult) {
         if (competitions.isEmpty()) {
             return CompletableFuture.completedFuture(new CompetitionResult(null, lastResult == null ? JoinResult.NOT_JOINABLE : lastResult));
         }
@@ -134,9 +147,9 @@ public class CompetitionManager {
         // Select the competition with the most number of players
         Competition<?> competition = competitions.stream()
                 .max(Comparator.comparingInt(Competition::getAlivePlayerCount))
-                .orElse(null);
+                .orElseThrow(); // Should never throw but just in case
 
-        CompletableFuture<JoinResult> result = competition.canJoin(player, role);
+        CompletableFuture<JoinResult> result = competition.canJoin(players, role);
         JoinResult joinResult = result.join();
         if (joinResult == JoinResult.SUCCESS) {
             return CompletableFuture.completedFuture(new CompetitionResult(competition, JoinResult.SUCCESS));
@@ -144,7 +157,7 @@ public class CompetitionManager {
             List<Competition<?>> remainingCompetitions = new ArrayList<>(competitions);
             remainingCompetitions.remove(competition);
 
-            return this.findJoinableCompetition(remainingCompetitions, player, role, joinResult);
+            return this.findJoinableCompetition(remainingCompetitions, players, role, joinResult);
         }
     }
 

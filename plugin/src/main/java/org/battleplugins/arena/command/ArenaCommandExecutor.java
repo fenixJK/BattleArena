@@ -19,6 +19,9 @@ import org.battleplugins.arena.editor.WizardStage;
 import org.battleplugins.arena.editor.context.MapCreateContext;
 import org.battleplugins.arena.editor.type.MapOption;
 import org.battleplugins.arena.event.player.ArenaLeaveEvent;
+import org.battleplugins.arena.feature.party.Parties;
+import org.battleplugins.arena.feature.party.Party;
+import org.battleplugins.arena.feature.party.PartyMember;
 import org.battleplugins.arena.messages.Messages;
 import org.battleplugins.arena.options.ArenaOptionType;
 import org.battleplugins.arena.options.TeamSelection;
@@ -29,7 +32,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -79,8 +84,47 @@ public class ArenaCommandExecutor extends BaseCommandExecutor {
             return;
         }
 
+        Set<Player> players;
+        Party party = Parties.getParty(player.getUniqueId());
+        if (party != null) {
+            players = new HashSet<>();
+            PartyMember leader = party.getLeader();
+            if (leader != null) {
+                // If player is not the leader, deny them entry
+                if (!leader.getUniqueId().equals(player.getUniqueId())) {
+                    Messages.CANNOT_JOIN_ARENA_NOT_PARTY_LEADER.send(player);
+                    return;
+                }
+
+                players.add(player);
+            }
+
+            for (PartyMember member : party.getMembers()) {
+                Player memberPlayer = Bukkit.getPlayer(member.getUniqueId());
+                if (memberPlayer != null) {
+                    players.add(memberPlayer);
+                }
+            }
+
+            // If we get into a weird state where the party is empty,
+            // just add the player
+            if (players.isEmpty()) {
+                players.add(player);
+            }
+        } else {
+            players = Set.of(player);
+        }
+
+        // If any player is already in an arena, deny them entry
+        for (Player toJoin : players) {
+            if (ArenaPlayer.getArenaPlayer(toJoin) != null) {
+                Messages.CANNOT_JOIN_ARENA_MEMBER_IN_ARENA.send(player);
+                return;
+            }
+        }
+
         List<Competition<?>> competitions = map == RANDOM_MAP_MARKER ? this.arena.getPlugin().getCompetitions(this.arena) : this.arena.getPlugin().getCompetitions(this.arena, map.getName());
-        this.arena.getPlugin().findJoinableCompetition(competitions, player, PlayerRole.PLAYING).whenCompleteAsync((result, e) -> {
+        this.arena.getPlugin().findJoinableCompetition(competitions, players, PlayerRole.PLAYING).whenCompleteAsync((result, e) -> {
             if (e != null) {
                 Messages.ARENA_ERROR.send(player, e.getMessage());
                 this.arena.getPlugin().error("An error occurred while joining the arena", e);
@@ -89,9 +133,11 @@ public class ArenaCommandExecutor extends BaseCommandExecutor {
 
             Competition<?> competition = result.competition();
             if (competition != null) {
-                competition.join(player, PlayerRole.PLAYING);
+                competition.join(players, PlayerRole.PLAYING);
 
-                Messages.ARENA_JOINED.send(player, competition.getMap().getName());
+                for (Player toJoin : players) {
+                    Messages.ARENA_JOINED.send(toJoin, competition.getMap().getName());
+                }
             } else {
                 List<LiveCompetitionMap> maps = this.arena.getPlugin().getMaps(this.arena);
                 if (maps.isEmpty()) {
@@ -107,7 +153,7 @@ public class ArenaCommandExecutor extends BaseCommandExecutor {
 
                 // Try and create a dynamic competition if possible
                 this.arena.getPlugin()
-                        .getOrCreateCompetition(this.arena, player, PlayerRole.PLAYING, mapName)
+                        .getOrCreateCompetition(this.arena, players, PlayerRole.PLAYING, mapName)
                         .whenComplete((newResult, ex) -> {
                             if (ex != null) {
                                 Messages.ARENA_ERROR.send(player, ex.getMessage());
@@ -130,8 +176,10 @@ public class ArenaCommandExecutor extends BaseCommandExecutor {
                                 return;
                             }
 
-                            newResult.competition().join(player, PlayerRole.PLAYING);
-                            Messages.ARENA_JOINED.send(player, newResult.competition().getMap().getName());
+                            for (Player toJoin : players) {
+                                newResult.competition().join(toJoin, PlayerRole.PLAYING);
+                                Messages.ARENA_JOINED.send(toJoin, newResult.competition().getMap().getName());
+                            }
                         });
             }
         }, Bukkit.getScheduler().getMainThreadExecutor(this.arena.getPlugin()));

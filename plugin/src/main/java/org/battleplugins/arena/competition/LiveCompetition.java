@@ -28,6 +28,7 @@ import org.battleplugins.arena.team.ArenaTeams;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -84,6 +85,11 @@ public class LiveCompetition<T extends Competition<T>> implements ArenaLike, Com
 
     @Override
     public CompletableFuture<JoinResult> canJoin(Player player, PlayerRole role) {
+        return this.canJoin(Set.of(player), role);
+    }
+
+    @Override
+    public CompletableFuture<JoinResult> canJoin(Collection<Player> players, PlayerRole role) {
         CompetitionPhase<T> currentPhase = this.phaseManager.getCurrentPhase();
 
         // Check if the player can join the competition in its current state
@@ -100,20 +106,24 @@ public class LiveCompetition<T extends Competition<T>> implements ArenaLike, Com
             // the overall maximum number of players this competition can have
             if (teams.getTeamSelection() == TeamSelection.PICK || teams.isNonTeamGame()) {
                 // Player cannot join - arena is full
-                if ((this.getPlayers().size() + 1) > this.maxPlayers) {
+                if ((this.getPlayers().size() + this.players.size()) > this.maxPlayers) {
                     return CompletableFuture.completedFuture(JoinResult.ARENA_FULL);
                 }
             } else {
                 List<ArenaTeam> availableTeams = teams.getAvailableTeams();
                 // Otherwise, we need to go through all teams and see if there is room for the player
-                for (ArenaTeam availableTeam : availableTeams) {
-                    // If we have less than the minimum amount of players on the team, then we can
-                    // assume that this team has room and break
-                    if (this.teamManager.canJoinTeam(availableTeam)) {
-                        break;
-                    }
 
-                    // No available teams - return that the arena is full
+                int spaceAvailable = 0;
+                for (ArenaTeam availableTeam : availableTeams) {
+                    // Get the amount of space remaining on the team
+                    int remainingSpace = this.teamManager.getRemainingSpace(availableTeam);
+                    if (remainingSpace > 0) {
+                        spaceAvailable += remainingSpace;
+                    }
+                }
+
+                // No available teams - return that the arena is full
+                if (spaceAvailable < players.size()) {
                     return CompletableFuture.completedFuture(JoinResult.ARENA_FULL);
                 }
             }
@@ -124,9 +134,15 @@ public class LiveCompetition<T extends Competition<T>> implements ArenaLike, Com
             return CompletableFuture.completedFuture(JoinResult.NOT_SPECTATABLE);
         }
 
-        // Call the ArenaPreJoinEvent
-        ArenaPreJoinEvent event = this.arena.getEventManager().callEvent(new ArenaPreJoinEvent(this.arena, this, role, JoinResult.SUCCESS, player));
-        return CompletableFuture.completedFuture(event.getResult());
+        for (Player player : players) {
+            // Call the ArenaPreJoinEvent
+            ArenaPreJoinEvent event = this.arena.getEventManager().callEvent(new ArenaPreJoinEvent(this.arena, this, role, JoinResult.SUCCESS, player));
+            if (event.getResult() != JoinResult.SUCCESS) {
+                return CompletableFuture.completedFuture(event.getResult());
+            }
+        }
+
+        return CompletableFuture.completedFuture(JoinResult.SUCCESS);
     }
 
     /**
@@ -174,7 +190,12 @@ public class LiveCompetition<T extends Competition<T>> implements ArenaLike, Com
 
     @Override
     public final void join(Player player, PlayerRole role) {
-        this.join(player, role, null);
+        this.join(Set.of(player), role);
+    }
+
+    @Override
+    public final void join(Collection<Player> players, PlayerRole role) {
+        this.join(players, role, null);
     }
 
     /**
@@ -186,14 +207,29 @@ public class LiveCompetition<T extends Competition<T>> implements ArenaLike, Com
      * @param team the team to join
      */
     public final void join(Player player, PlayerRole role, @Nullable ArenaTeam team) {
-        if (this.arena.getPlugin().isInArena(player)) {
-            throw new IllegalStateException("Player is already in an arena!");
+        this.join(Set.of(player), role, team);
+    }
+
+    /**
+     * Makes the players join the competition with the specified {@link PlayerRole}
+     * and {@link ArenaTeam}.
+     *
+     * @param players the players to join
+     * @param role the role of the player
+     * @param team the team to join
+     */
+    public final void join(Collection<Player> players, PlayerRole role, @Nullable ArenaTeam team) {
+        for (Player player : players) {
+            if (this.arena.getPlugin().isInArena(player)) {
+                this.arena.getPlugin().error("Player {} is already in an arena! Please report this as it is a bug!", player.getName(), new IllegalStateException());
+                continue;
+            }
+
+            ArenaPlayer arenaPlayer = this.createPlayer(player);
+            arenaPlayer.setRole(role);
+
+            this.join(arenaPlayer, team);
         }
-
-        ArenaPlayer arenaPlayer = this.createPlayer(player);
-        arenaPlayer.setRole(role);
-
-        this.join(arenaPlayer, team);
     }
 
     private void join(ArenaPlayer player, @Nullable ArenaTeam team) {

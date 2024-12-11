@@ -45,6 +45,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -466,6 +467,21 @@ public class BattleArena extends JavaPlugin implements LoggerHolder {
     }
 
     /**
+     * Returns a currently active {@link Competition} for the given {@link Arena},
+     * {@link Player}s, {@link PlayerRole} and map name. If no competition is found,
+     * a new one is created if applicable.
+     *
+     * @param arena the arena to get the competition for
+     * @param players the players to get the competition for
+     * @param role the role of the player
+     * @param name the name of the competition
+     * @return the competition result
+     */
+    public CompletableFuture<CompetitionResult> getOrCreateCompetition(Arena arena, Collection<Player> players, PlayerRole role, @Nullable String name) {
+        return this.competitionManager.getOrCreateCompetition(arena, players, role, name);
+    }
+
+    /**
      * Finds a joinable {@link Competition} for the given {@link Player} and {@link PlayerRole}.
      *
      * @param competitions the competitions to find from
@@ -475,6 +491,18 @@ public class BattleArena extends JavaPlugin implements LoggerHolder {
      */
     public CompletableFuture<CompetitionResult> findJoinableCompetition(List<Competition<?>> competitions, Player player, PlayerRole role) {
         return this.competitionManager.findJoinableCompetition(competitions, player, role);
+    }
+
+    /**
+     * Finds a joinable {@link Competition} for the given {@link Player}s and {@link PlayerRole}.
+     *
+     * @param competitions the competitions to find from
+     * @param players the players to find the competition for
+     * @param role the role of the player
+     * @return the competition result
+     */
+    public CompletableFuture<CompetitionResult> findJoinableCompetition(List<Competition<?>> competitions, Collection<Player> players, PlayerRole role) {
+        return this.competitionManager.findJoinableCompetition(competitions, players, role);
     }
 
     /**

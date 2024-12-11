@@ -6,6 +6,7 @@ import org.battleplugins.arena.competition.phase.CompetitionPhaseType;
 import org.battleplugins.arena.event.player.ArenaLeaveEvent;
 import org.bukkit.entity.Player;
 
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -46,9 +47,18 @@ public interface Competition<T extends Competition<T>> extends CompetitionLike<T
     /**
      * Gets whether the player can join the competition.
      *
+     * @param player the player to join
      * @param role the role of the player
      */
     CompletableFuture<JoinResult> canJoin(Player player, PlayerRole role);
+
+    /**
+     * Gets whether the players can join the competition.
+     *
+     * @param players the players to join
+     * @param role the role of the player
+     */
+    CompletableFuture<JoinResult> canJoin(Collection<Player> players, PlayerRole role);
 
     /**
      * Adds the player to the competition.
@@ -57,6 +67,14 @@ public interface Competition<T extends Competition<T>> extends CompetitionLike<T
      * @param role the role of the player
      */
     void join(Player player, PlayerRole role);
+
+    /**
+     * Adds the players to the competition.
+     *
+     * @param players the players to join
+     * @param role the role of the player
+     */
+    void join(Collection<Player> players, PlayerRole role);
 
     /**
      * Removes the player from the competition.
