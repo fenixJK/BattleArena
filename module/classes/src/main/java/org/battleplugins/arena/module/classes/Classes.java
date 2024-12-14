@@ -1,8 +1,10 @@
 package org.battleplugins.arena.module.classes;
 
+import org.battleplugins.arena.BattleArena;
 import org.battleplugins.arena.config.ArenaConfigParser;
 import org.battleplugins.arena.config.ParseException;
 import org.battleplugins.arena.event.BattleArenaPostInitializeEvent;
+import org.battleplugins.arena.event.BattleArenaReloadedEvent;
 import org.battleplugins.arena.event.action.EventActionType;
 import org.battleplugins.arena.event.arena.ArenaCreateExecutorEvent;
 import org.battleplugins.arena.module.ArenaModule;
@@ -35,30 +37,44 @@ public class Classes implements ArenaModuleInitializer {
 
     @EventHandler
     public void onPostInitialize(BattleArenaPostInitializeEvent event) {
-        ArenaModuleContainer<Classes> container = event.getBattleArena()
+        this.onLoad(event.getBattleArena(), true);
+    }
+
+    @EventHandler
+    public void onReloaded(BattleArenaReloadedEvent event) {
+        this.onLoad(event.getBattleArena(), false);
+    }
+
+    private void onLoad(BattleArena plugin, boolean initial) {
+        ArenaModuleContainer<Classes> container = plugin
                 .<Classes>module(ID)
                 .orElseThrow();
 
-        Path dataFolder = event.getBattleArena().getDataFolder().toPath();
+        Path dataFolder = plugin.getDataFolder().toPath();
         Path classesPath = dataFolder.resolve("classes.yml");
         if (Files.notExists(classesPath)) {
             InputStream inputStream = container.getResource("classes.yml");
             try {
                 Files.copy(inputStream, classesPath);
             } catch (Exception e) {
-                event.getBattleArena().error("Failed to copy classes.yml to data folder!", e);
-                container.disable("Failed to copy classes.yml to data folder!");
+                plugin.error("Failed to copy classes.yml to data folder!", e);
+
+                if (initial) {
+                    container.disable("Failed to copy classes.yml to data folder!");
+                }
                 return;
             }
         }
 
         Configuration classesConfig = YamlConfiguration.loadConfiguration(classesPath.toFile());
         try {
-            this.classes = ArenaConfigParser.newInstance(classesPath, ClassesConfig.class, classesConfig, event.getBattleArena());
+            this.classes = ArenaConfigParser.newInstance(classesPath, ClassesConfig.class, classesConfig, plugin);
         } catch (ParseException e) {
             ParseException.handle(e);
 
-            container.disable("Failed to parse classes.yml!");
+            if (initial) {
+                container.disable("Failed to parse classes.yml!");
+            }
         }
     }
 

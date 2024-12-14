@@ -5,6 +5,7 @@ import org.battleplugins.arena.BattleArena;
 import org.battleplugins.arena.config.ArenaConfigParser;
 import org.battleplugins.arena.config.ParseException;
 import org.battleplugins.arena.event.BattleArenaPostInitializeEvent;
+import org.battleplugins.arena.event.BattleArenaReloadedEvent;
 import org.battleplugins.arena.module.ArenaModule;
 import org.battleplugins.arena.module.ArenaModuleContainer;
 import org.battleplugins.arena.module.ArenaModuleInitializer;
@@ -13,7 +14,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.EventHandler;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,19 +38,30 @@ public class Tournaments implements ArenaModuleInitializer {
 
     @EventHandler
     public void onPostInitialize(BattleArenaPostInitializeEvent event) {
-        ArenaModuleContainer<Tournaments> container = event.getBattleArena()
+        this.onLoad(event.getBattleArena(), true);
+    }
+
+    @EventHandler
+    public void onReloaded(BattleArenaReloadedEvent event) {
+        this.onLoad(event.getBattleArena(), false);
+    }
+
+    private void onLoad(BattleArena plugin, boolean initial) {
+        ArenaModuleContainer<Tournaments> container = plugin
                 .<Tournaments>module(ID)
                 .orElseThrow();
 
-        Path dataFolder = event.getBattleArena().getDataFolder().toPath();
+        Path dataFolder = plugin.getDataFolder().toPath();
         Path tournamentPath = dataFolder.resolve("tournament-config.yml");
         if (Files.notExists(tournamentPath)) {
             InputStream inputStream = container.getResource("tournament-config.yml");
             try {
                 Files.copy(inputStream, tournamentPath);
             } catch (Exception e) {
-                event.getBattleArena().error("Failed to copy tournament-config.yml to data folder!", e);
-                container.disable("Failed to copy tournament-config.yml to data folder!");
+                plugin.error("Failed to copy tournament-config.yml to data folder!", e);
+                if (initial) {
+                    container.disable("Failed to copy tournament-config.yml to data folder!");
+                }
                 return;
             }
         }
@@ -61,7 +72,9 @@ public class Tournaments implements ArenaModuleInitializer {
         } catch (ParseException e) {
             ParseException.handle(e);
 
-            container.disable("Failed to parse tournament-config.yml!");
+            if (initial) {
+                container.disable("Failed to parse tournament-config.yml!");
+            }
         }
     }
 

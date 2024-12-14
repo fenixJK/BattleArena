@@ -1,9 +1,11 @@
 package org.battleplugins.arena.module.scoreboard;
 
+import org.battleplugins.arena.BattleArena;
 import org.battleplugins.arena.config.ArenaConfigParser;
 import org.battleplugins.arena.config.ParseException;
 import org.battleplugins.arena.event.ArenaListener;
 import org.battleplugins.arena.event.BattleArenaPostInitializeEvent;
+import org.battleplugins.arena.event.BattleArenaReloadedEvent;
 import org.battleplugins.arena.event.action.EventActionType;
 import org.battleplugins.arena.event.arena.ArenaInitializeEvent;
 import org.battleplugins.arena.module.ArenaModule;
@@ -38,19 +40,31 @@ public class Scoreboards implements ArenaModuleInitializer, ArenaListener {
 
     @EventHandler
     public void onPostInitialize(BattleArenaPostInitializeEvent event) {
-        ArenaModuleContainer<Scoreboards> container = event.getBattleArena()
+        this.onLoad(event.getBattleArena(), true);
+    }
+
+    @EventHandler
+    public void onReloaded(BattleArenaReloadedEvent event) {
+        this.onLoad(event.getBattleArena(), false);
+    }
+
+    private void onLoad(BattleArena plugin, boolean initial) {
+        ArenaModuleContainer<Scoreboards> container = plugin
                 .<Scoreboards>module(ID)
                 .orElseThrow();
 
-        Path dataFolder = event.getBattleArena().getDataFolder().toPath();
+        Path dataFolder = plugin.getDataFolder().toPath();
         Path scoreboardsPath = dataFolder.resolve("scoreboards.yml");
         if (Files.notExists(scoreboardsPath)) {
             InputStream inputStream = container.getResource("scoreboards.yml");
             try {
                 Files.copy(inputStream, scoreboardsPath);
             } catch (Exception e) {
-                event.getBattleArena().error("Failed to copy scoreboards.yml to data folder!", e);
-                container.disable("Failed to copy scoreboards.yml to data folder!");
+                plugin.error("Failed to copy scoreboards.yml to data folder!", e);
+
+                if (initial) {
+                    container.disable("Failed to copy scoreboards.yml to data folder!");
+                }
                 return;
             }
         }
@@ -61,7 +75,9 @@ public class Scoreboards implements ArenaModuleInitializer, ArenaListener {
         } catch (ParseException e) {
             ParseException.handle(e);
 
-            container.disable("Failed to parse scoreboards.yml!");
+            if (initial) {
+                container.disable("Failed to parse scoreboards.yml!");
+            }
         }
     }
 
