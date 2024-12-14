@@ -60,7 +60,7 @@ import java.util.stream.Stream;
 /**
  * The main class for BattleArena.
  */
-public class BattleArena extends JavaPlugin implements LoggerHolder {
+public class BattleArena extends JavaPlugin implements LoggerHolder, BattleArenaApi {
     private static final int PLUGIN_ID = 4597;
 
     private static BattleArena instance;
@@ -525,18 +525,6 @@ public class BattleArena extends JavaPlugin implements LoggerHolder {
         this.competitionManager.removeCompetition(arena, competition);
     }
 
-    private void loadArenas() {
-        // Register our arenas once ALL the plugins have loaded. This ensures that
-        // all custom plugins adding their own arena types have been loaded.
-        for (ArenaLoader value : this.arenaLoaders.values()) {
-            try {
-                value.load();
-            } catch (Exception e) {
-                this.error("An error occurred when loading arena {}: {}", value.arenaPath().getFileName(), e.getMessage(), e);
-            }
-        }
-    }
-
     /**
      * Returns the {@link EventScheduler}, which is responsible for scheduling events.
      *
@@ -666,6 +654,18 @@ public class BattleArena extends JavaPlugin implements LoggerHolder {
     @Override
     public @NotNull Logger getSLF4JLogger() {
         return super.getSLF4JLogger();
+    }
+
+    private void loadArenas() {
+        // Register our arenas once ALL the plugins have loaded. This ensures that
+        // all custom plugins adding their own arena types have been loaded.
+        for (ArenaLoader value : this.arenaLoaders.values()) {
+            try {
+                value.load();
+            } catch (Exception e) {
+                this.error("An error occurred when loading arena {}: {}", value.arenaPath().getFileName(), e.getMessage(), e);
+            }
+        }
     }
 
     private void loadArenaLoaders(Path path) {
