@@ -1,5 +1,6 @@
 package org.battleplugins.arena.command;
 
+import io.papermc.paper.math.Position;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -455,6 +456,30 @@ public class BaseCommandExecutor implements TabExecutor {
                     return null;
                 }
             }
+            case "position" -> {
+                String[] coords = arg.split(",");
+                if (coords.length != 3) {
+                    return null;
+                }
+
+                double x = Double.parseDouble(coords[0]);
+                double y = Double.parseDouble(coords[1]);
+                double z = Double.parseDouble(coords[2]);
+
+                return Position.fine(x, y, z);
+            }
+            case "blockposition" -> {
+                String[] coords = arg.split(",");
+                if (coords.length != 3) {
+                    return null;
+                }
+
+                int x = Integer.parseInt(coords[0]);
+                int y = Integer.parseInt(coords[1]);
+                int z = Integer.parseInt(coords[2]);
+
+                return Position.block(x, y, z);
+            }
             case "material" -> {
                 try {
                     return ItemStackParser.deserializeSingular(arg);
@@ -517,6 +542,10 @@ public class BaseCommandExecutor implements TabExecutor {
             }
             case "arena" -> {
                 Messages.ARENA_DOES_NOT_EXIST.send(sender, input);
+                return true;
+            }
+            case "position", "blockposition" -> {
+                Messages.INVALID_POSITION.send(sender, input);
                 return true;
             }
         }
@@ -623,6 +652,7 @@ public class BaseCommandExecutor implements TabExecutor {
             case "player", "offlineplayer" -> "<player> ";
             case "world" -> "<world> ";
             case "arena" -> "<arena> ";
+            case "position", "blockposition" -> "<x,y,z> ";
             default -> {
                 for (SubCommandExecutor subCommandExecutor : this.subCommandExecutors) {
                     String usage = subCommandExecutor.getUsageString(parameter);
