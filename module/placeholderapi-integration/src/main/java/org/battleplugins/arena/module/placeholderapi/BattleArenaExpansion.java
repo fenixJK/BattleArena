@@ -76,14 +76,14 @@ public class BattleArenaExpansion extends PlaceholderExpansion {
                         return Util.serializeToLegacy(teamColor);
                     }
                 }
-                case "formatted_team_name": {
+                case "team_name_formatted": {
                     ArenaTeam team = arenaPlayer.getTeam();
                     if (team != null) {
                         Component teamName = team.getFormattedName();
                         return Messages.wrap(teamName).asPlainText();
                     }
                 }
-                case "formatted_team_name_legacy": {
+                case "team_name_formatted_legacy": {
                     ArenaTeam team = arenaPlayer.getTeam();
                     if (team != null) {
                         Component teamName = team.getFormattedName();
