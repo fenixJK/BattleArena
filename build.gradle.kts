@@ -9,7 +9,7 @@ allprojects {
     }
 
     group = "org.battleplugins"
-    version = "4.0.2-SNAPSHOT"
+    version = "4.0.2"
 
     repositories {
         maven("https://repo.papermc.io/repository/maven-public")
