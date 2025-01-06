@@ -7,6 +7,7 @@ repositories {
             artifact()
         }
     }
+    maven("https://nexus.phoenixdevt.fr/repository/maven-public/")
 }
 
 dependencies {
@@ -14,5 +15,8 @@ dependencies {
     compileOnly("me.zombie_striker:QualityArmory:2.0.17")
     compileOnly("com.github.LoneDev6:api-itemsadder:3.6.1")
     compileOnly("io.lumine:Mythic-Dist:5.6.1")
+    compileOnly("io.lumine:MythicLib-dist:1.6.2-SNAPSHOT")
     compileOnly("com.elmakers.mine.bukkit:MagicAPI:10.2")
+    compileOnly("net.Indyuce:MMOItems-API:6.9.5-SNAPSHOT")
+    compileOnly("com.cjcrafter:weaponmechanics:3.4.1")
 }

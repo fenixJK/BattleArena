@@ -9,9 +9,11 @@ import org.battleplugins.arena.module.ArenaModule;
 import org.battleplugins.arena.module.ArenaModuleInitializer;
 import org.battleplugins.arena.module.items.itemsadder.ItemsAdderFeature;
 import org.battleplugins.arena.module.items.magic.MagicFeature;
+import org.battleplugins.arena.module.items.mmoitems.MMOItemsFeature;
 import org.battleplugins.arena.module.items.mythiccrucible.MythicCrucibleFeature;
 import org.battleplugins.arena.module.items.oraxen.OraxenFeature;
 import org.battleplugins.arena.module.items.qualityarmory.QualityArmoryFeature;
+import org.battleplugins.arena.module.items.weaponmechanics.WeaponMechanicsFeature;
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -34,6 +36,8 @@ public class ItemsIntegration implements ArenaModuleInitializer {
         registerProvider(plugin, "ItemsAdder", ItemsAdderFeature::new);
         registerProvider(plugin, "MythicCrucible", MythicCrucibleFeature::new);
         registerProvider(plugin, "Magic", MagicFeature::new);
+        registerProvider(plugin, "MMOItems", MMOItemsFeature::new);
+        registerProvider(plugin, "WeaponMechanics", WeaponMechanicsFeature::new);
     }
 
     private static <T extends PluginFeature<ItemsFeature> & ItemsFeature> void registerProvider(BattleArena plugin, String pluginName, Supplier<T> feature) {

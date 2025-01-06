@@ -45,6 +45,7 @@ public interface ItemsFeature extends FeatureInstance {
             return ItemStackParser.applyItemProperties(itemStack, arguments, (itemMeta, argument) -> this.onUnknownArgument(itemStack, itemMeta, argument.key(), argument.value()));
         } catch (ParseException e) {
             ParseException.handle(e);
+
             return new ItemStack(Material.AIR);
         }
     }

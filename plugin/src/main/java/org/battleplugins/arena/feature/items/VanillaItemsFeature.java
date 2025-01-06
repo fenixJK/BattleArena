@@ -15,7 +15,7 @@ class VanillaItemsFeature implements ItemsFeature {
 
     @Override
     public ItemStack createItem(NamespacedKey key) {
-        throw new UnsupportedOperationException("Cannot create vanilla item without arguments");
+        throw new UnsupportedOperationException("Cannot create vanilla item without arguments!");
     }
 
     @Override
