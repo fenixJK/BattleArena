@@ -70,7 +70,16 @@ public final class BlockUtil {
 
         if (Files.notExists(path)) {
             Bukkit.getLogger().warning("Schematic not found: " + path);
-            return false;
+            path = map.getArena().getPlugin().getDataFolder().toPath()
+                .resolve("schematics")
+                .resolve(map.getArena().getName().toLowerCase(Locale.ROOT))
+                .resolve(map.getName().toLowerCase(Locale.ROOT) + "." +
+                        BuiltInClipboardFormat.MCEDIT_SCHEMATIC.getPrimaryFileExtension()
+                );
+            if (Files.notExists(path)) {
+                Bukkit.getLogger().warning("Schematic not found: " + path);
+                return false;
+            }
         }
 
         ClipboardFormat format = ClipboardFormats.findByFile(path.toFile());
