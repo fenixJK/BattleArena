@@ -15,14 +15,18 @@ import org.battleplugins.arena.team.ArenaTeam;
 import org.battleplugins.arena.util.IntRange;
 import org.battleplugins.arena.util.Util;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.battleplugins.arena.module.tournaments.TournamentMessages.NEXT_ROUND_STARTING;
@@ -145,7 +149,7 @@ public class Tournament {
         Set<Player> players = new HashSet<>(this.queuedPlayers);
         this.queuedPlayers.clear();
 
-        List<Contestant> contestants = calculateContestants(players, this.maxContestantSize, this.requiredContestantsPerRound);
+        List<Contestant> contestants = calculateContestants(this.arena, players, this.maxContestantSize, this.requiredContestantsPerRound);
         this.advance(contestants);
     }
 
@@ -472,7 +476,12 @@ public class Tournament {
         return new Tournament(tournaments, arena, teamSize.getMin() == Integer.MAX_VALUE ? teamSize.getMin() : teamSize.getMax(), requiredPlayers, requiredContestants);
     }
 
-    private static List<Contestant> calculateContestants(Set<Player> queuedPlayers, int maxContestantSize, int requiredContestantsPerRound) {
+    private static List<Contestant> calculateContestants(Arena arena, Set<Player> queuedPlayers, int maxContestantSize, int requiredContestantsPerRound) {
+        List<Contestant> betterTeamsContestants = tryCreateBetterTeamsContestants(arena, queuedPlayers, maxContestantSize, requiredContestantsPerRound);
+        if (betterTeamsContestants != null) {
+            return betterTeamsContestants;
+        }
+
         List<Player> playersList = new ArrayList<>(queuedPlayers);
 
         int safeRequiredContestants = Math.max(1, requiredContestantsPerRound);
@@ -529,6 +538,148 @@ public class Tournament {
             contestant.clearPlayers();
             List<Player> players = playersList.subList(start, end);
             players.forEach(contestant::addPlayer);
+        }
+
+        return contestants;
+    }
+
+    @Nullable
+    private static List<Contestant> tryCreateBetterTeamsContestants(Arena arena, Set<Player> queuedPlayers, int maxContestantSize, int requiredContestantsPerRound) {
+        if (!arena.isModuleEnabled("betterteams") || !Bukkit.getPluginManager().isPluginEnabled("BetterTeams")) {
+            return null;
+        }
+
+        if (arena.getTeams().isNonTeamGame()) {
+            return null;
+        }
+
+        List<Set<Player>> groupedPlayers = groupPlayersByBetterTeams(queuedPlayers);
+        if (groupedPlayers == null || groupedPlayers.isEmpty()) {
+            return null;
+        }
+
+        List<Set<Player>> adjustedGroups = splitOversizedGroups(groupedPlayers, maxContestantSize);
+        if (adjustedGroups == null || adjustedGroups.size() < requiredContestantsPerRound) {
+            return null;
+        }
+
+        int safeRequiredContestants = Math.max(1, requiredContestantsPerRound);
+        int totalPlayers = queuedPlayers.size();
+        int playersPerContestant = Math.min(maxContestantSize, Math.max(1, totalPlayers / safeRequiredContestants));
+        int numOfContestants = totalPlayers / playersPerContestant;
+        while (numOfContestants < safeRequiredContestants && playersPerContestant > 1) {
+            playersPerContestant--;
+            numOfContestants = totalPlayers / playersPerContestant;
+        }
+
+        List<Contestant> contestants = packGroupsIntoContestants(adjustedGroups, playersPerContestant);
+        if (contestants.size() < requiredContestantsPerRound) {
+            return null;
+        }
+
+        return contestants;
+    }
+
+    @Nullable
+    private static List<Set<Player>> groupPlayersByBetterTeams(Set<Player> queuedPlayers) {
+        try {
+            Class<?> teamClass = Class.forName("com.booksaw.betterTeams.Team");
+            Method getTeam = teamClass.getMethod("getTeam", OfflinePlayer.class);
+            Method getOnlineMembers = teamClass.getMethod("getOnlineMembers");
+
+            Set<Player> remainingPlayers = new HashSet<>(queuedPlayers);
+            List<Set<Player>> groups = new ArrayList<>();
+
+            while (!remainingPlayers.isEmpty()) {
+                Player player = remainingPlayers.iterator().next();
+                remainingPlayers.remove(player);
+
+                Object team = getTeam.invoke(null, player);
+                if (team == null) {
+                    groups.add(Set.of(player));
+                    continue;
+                }
+
+                Object members = getOnlineMembers.invoke(team);
+                Set<Player> group = extractQueuedPlayers(members, queuedPlayers);
+                if (group.isEmpty()) {
+                    group = Set.of(player);
+                }
+
+                groups.add(group);
+                remainingPlayers.removeAll(group);
+            }
+
+            return groups;
+        } catch (ReflectiveOperationException | LinkageError e) {
+            return null;
+        }
+    }
+
+    private static Set<Player> extractQueuedPlayers(Object members, Set<Player> queuedPlayers) {
+        if (!(members instanceof Collection<?> collection)) {
+            return Set.of();
+        }
+
+        Set<Player> result = new HashSet<>();
+        for (Object member : collection) {
+            Player player = null;
+            if (member instanceof Player onlinePlayer) {
+                player = onlinePlayer;
+            } else if (member instanceof OfflinePlayer offlinePlayer) {
+                player = offlinePlayer.getPlayer();
+            } else if (member instanceof UUID uuid) {
+                player = Bukkit.getPlayer(uuid);
+            }
+
+            if (player != null && queuedPlayers.contains(player)) {
+                result.add(player);
+            }
+        }
+
+        return result;
+    }
+
+    @Nullable
+    private static List<Set<Player>> splitOversizedGroups(List<Set<Player>> groups, int maxContestantSize) {
+        if (maxContestantSize <= 0) {
+            return null;
+        }
+
+        List<Set<Player>> adjustedGroups = new ArrayList<>();
+        for (Set<Player> group : groups) {
+            if (maxContestantSize == Integer.MAX_VALUE || group.size() <= maxContestantSize) {
+                adjustedGroups.add(group);
+                continue;
+            }
+
+            List<Player> players = new ArrayList<>(group);
+            for (int i = 0; i < players.size(); i += maxContestantSize) {
+                adjustedGroups.add(new HashSet<>(players.subList(i, Math.min(i + maxContestantSize, players.size()))));
+            }
+        }
+
+        return adjustedGroups;
+    }
+
+    private static List<Contestant> packGroupsIntoContestants(List<Set<Player>> groups, int playersPerContestant) {
+        List<Contestant> contestants = new ArrayList<>();
+        Set<Player> current = new HashSet<>();
+        int currentSize = 0;
+
+        for (Set<Player> group : groups) {
+            if (!current.isEmpty() && currentSize + group.size() > playersPerContestant) {
+                contestants.add(new Contestant(current));
+                current = new HashSet<>();
+                currentSize = 0;
+            }
+
+            current.addAll(group);
+            currentSize += group.size();
+        }
+
+        if (!current.isEmpty()) {
+            contestants.add(new Contestant(current));
         }
 
         return contestants;
